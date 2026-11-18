@@ -1,0 +1,14 @@
+name: split-headers
+source:
+  type: sqlite
+  connection: Data Source=showcase.db
+  table: sales_flat
+transforms:
+  - select:
+      OrderId: OrderId
+      Customer: Customer
+sink:
+  type: postgresql
+  connection: Host=${PG_HOST};Port=${PG_PORT};Username=${PG_USER};Password=${PG_PASSWORD};Database=${PG_DATABASE}
+  table: order_headers
+  mode: insert

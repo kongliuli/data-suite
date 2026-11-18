@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "DataForge Team",
+  "classifications": ["DataForge", "ETL", "Migration"],
+  "identity": "DataForge.Templates.Showcase",
+  "name": "DataForge migration showcase",
+  "shortName": "dataforge-showcase",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "DataForgeShowcase",
+  "preferNameDirectory": true,
+  "symbols": {
+    "pgPort": {
+      "type": "parameter",
+      "datatype": "text",
+      "defaultValue": "5433",
+      "replaces": "5433",
+      "description": "Default PostgreSQL port used by demo PG_* fallbacks in Program.cs"
+    },
+    "connectors": {
+      "type": "parameter",
+      "datatype": "choice",
+      "choices": [
+        {
+          "choice": "default",
+          "description": "sqlite + postgresql only (matches prior template behavior)"
+        },
+        {
+          "choice": "all",
+          "description": "Also reference and register sqlserver, mysql, excel, http, parquet, duckdb"
+        }
+      ],
+      "defaultValue": "default",
+      "description": "Which Jobs connector packages to reference and register"
+    }
+  }
+}

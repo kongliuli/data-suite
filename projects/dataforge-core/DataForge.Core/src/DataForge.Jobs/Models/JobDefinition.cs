@@ -1,0 +1,178 @@
+namespace DataForge.Jobs.Models;
+
+public sealed class JobFile
+{
+    public string? Name { get; set; }
+
+    public List<JobDefinition> Jobs { get; set; } = [];
+
+    public JobDefinition? SourceJob { get; set; }
+
+    /// <summary>Batch-level execution options for <c>jobs:</c> files.</summary>
+    public JobExecutionOptions? Execution { get; set; }
+}
+
+public sealed class JobDefinition
+{
+    public string? Name { get; set; }
+
+    public string? Schedule { get; set; }
+
+    /// <summary>Primary source. Ignored when <see cref="Sources"/> is set.</summary>
+    public SourceDefinition Source { get; set; } = new();
+
+    /// <summary>Multiple sources joined in order (inner equi-join).</summary>
+    public List<JoinSourceDefinition> Sources { get; set; } = [];
+
+    public List<TransformStep> Transforms { get; set; } = [];
+
+    public ValidateDefinition? Validate { get; set; }
+
+    public SinkDefinition Sink { get; set; } = new();
+
+    /// <summary>Per-job execution options (batch size hint, progress cadence).</summary>
+    public JobExecutionOptions? Execution { get; set; }
+
+    /// <summary>Optional incremental cursor stored next to the job file.</summary>
+    public WatermarkDefinition? Watermark { get; set; }
+}
+
+public sealed class JobExecutionOptions
+{
+    /// <summary>Max parallel jobs when a YAML file contains <c>jobs:</c>. Default 1 (sequential).</summary>
+    public int Parallelism { get; set; } = 1;
+
+    /// <summary>Stop the batch after the first failure. Default true.</summary>
+    public bool StopOnError { get; set; } = true;
+
+    /// <summary>Emit reading progress every N rows (0 = only phase events).</summary>
+    public int ProgressEvery { get; set; } = 1000;
+
+    /// <summary>Preferred sink batch size when the adapter supports it.</summary>
+    public int? BatchSize { get; set; }
+}
+
+/// <summary>
+/// Incremental watermark. The runner filters rows where <see cref="Column"/> is greater than the stored value,
+/// then writes the max seen value back to <see cref="StatePath"/>.
+/// </summary>
+public sealed class WatermarkDefinition
+{
+    public string Column { get; set; } = "";
+
+    public string StatePath { get; set; } = "";
+
+    /// <summary>Used when the state file does not exist yet.</summary>
+    public string? Initial { get; set; }
+}
+
+public sealed class JoinSourceDefinition
+{
+    public string Type { get; set; } = "csv";
+
+    public string Path { get; set; } = "";
+
+    public string? Connection { get; set; }
+
+    public string? Table { get; set; }
+
+    public string? Query { get; set; }
+
+    public SourceOptionsDefinition? Options { get; set; }
+
+    /// <summary>Alias prefix for columns, e.g. c_Id.</summary>
+    public string? Alias { get; set; }
+
+    /// <summary>Equi-join: left column = right column. Empty on the first source.</summary>
+    public string? On { get; set; }
+
+    public SourceDefinition ToSource() => new()
+    {
+        Type = Type,
+        Path = Path,
+        Connection = Connection,
+        Table = Table,
+        Query = Query,
+        Options = Options
+    };
+}
+
+public sealed class SourceDefinition
+{
+    public string Type { get; set; } = "csv";
+
+    public string Path { get; set; } = "";
+
+    public string? Connection { get; set; }
+
+    public string? Table { get; set; }
+
+    public string? Query { get; set; }
+
+    public SourceOptionsDefinition? Options { get; set; }
+}
+
+public sealed class SourceOptionsDefinition
+{
+    public bool? HasHeader { get; set; }
+
+    public char? Delimiter { get; set; }
+}
+
+public sealed class TransformStep
+{
+    public string? Where { get; set; }
+
+    public Dictionary<string, string>? Select { get; set; }
+}
+
+public sealed class ValidateDefinition
+{
+    public string OnError { get; set; } = "fail";
+
+    public string? BadRowOutput { get; set; }
+
+    public List<YamlValidationRule> Rules { get; set; } = [];
+}
+
+public sealed class YamlValidationRule
+{
+    public string Field { get; set; } = "";
+
+    public bool? Required { get; set; }
+
+    public decimal? Min { get; set; }
+
+    public decimal? Max { get; set; }
+
+    public string? Pattern { get; set; }
+}
+
+public sealed class SinkDefinition
+{
+    public string Type { get; set; } = "json";
+
+    public string Path { get; set; } = "";
+
+    public string? Connection { get; set; }
+
+    public string? Table { get; set; }
+
+    public string Mode { get; set; } = "insert";
+
+    /// <summary>Create the destination table from the first row when it does not exist (sqlite / postgresql).</summary>
+    public bool CreateTable { get; set; }
+
+    public List<string> Keys { get; set; } = [];
+
+    public SinkOptionsDefinition? Options { get; set; }
+}
+
+public sealed class SinkOptionsDefinition
+{
+    public bool? IncludeHeader { get; set; }
+
+    public bool? Indented { get; set; }
+
+    public int? BatchSize { get; set; }
+}
